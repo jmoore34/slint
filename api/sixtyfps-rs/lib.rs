@@ -258,6 +258,14 @@ pub fn register_font_from_path<P: AsRef<std::path::Path>>(
     sixtyfps_rendering_backend_default::backend().register_font_from_path(path.as_ref())
 }
 
+/// This function can be used to register a pre-rendered, embedded bitmap font with SixtyFPS,
+/// for use with the `font-family` property.
+#[doc(hidden)]
+#[cfg(not(feature = "std"))]
+pub fn register_bitmap_font(font_data: &'static self::re_exports::BitmapFont) {
+    sixtyfps_rendering_backend_default::backend().register_bitmap_font(font_data)
+}
+
 /// internal re_exports used by the macro generated
 #[doc(hidden)]
 pub mod re_exports {

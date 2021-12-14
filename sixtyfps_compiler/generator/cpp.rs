@@ -628,6 +628,7 @@ pub fn generate(doc: &Document, diag: &mut BuildDiagnostics) -> Option<impl std:
                     })
                 }
                 crate::embedded_resources::EmbeddedResourcesKind::TextureData(_) => todo!(),
+                crate::embedded_resources::EmbeddedResourcesKind::BitmapFontData(_) => todo!(),
             }
         },
     ));
@@ -2035,6 +2036,9 @@ fn compile_expression(
             BuiltinFunction::RegisterCustomFontByMemory => {
                 panic!("internal error: RegisterCustomFontByMemory can only be evaluated from within a FunctionCall expression")
             }
+            BuiltinFunction::RegisterBitmapFont => {
+                panic!("internal error: RegisterBitmapFont can only be evaluated from within a FunctionCall expression")
+            }
         },
         Expression::ElementReference(_) => todo!("Element references are only supported in the context of built-in function calls at the moment"),
         Expression::MemberFunction { .. } => panic!("member function expressions must not appear in the code generator anymore"),
@@ -2206,6 +2210,9 @@ fn compile_expression(
                     panic!("internal error: argument to RegisterCustomFontByMemory must be a number")
                 }
             }
+            Expression::BuiltinFunctionReference(BuiltinFunction::RegisterBitmapFont, _) => {
+                todo!()
+            },
             _ => {
                 let mut args = arguments.iter().map(|e| compile_expression(e, component));
 

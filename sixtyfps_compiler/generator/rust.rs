@@ -876,7 +876,44 @@ fn generate_component(
                         };
                     )
                 },
-            }
+                crate::embedded_resources::EmbeddedResourcesKind::BitmapFontData(crate::embedded_resources::BitmapFont { family_name, character_map, units_per_em, ascent, descent, glyphs }) => {
+
+                    let character_map = character_map.iter().map(|crate::embedded_resources::CharacterMapEntry{code_point, glyph_index}| quote!(sixtyfps::re_exports::CharacterMapEntry { code_point: #code_point, glyph_index: #glyph_index }));
+
+                    let glyphs = glyphs.iter().map(|crate::embedded_resources::BitmapGlyphs{pixel_size, glyph_data}| {
+                        let glyph_data = glyph_data.iter().map(|crate::embedded_resources::BitmapGlyph{x, y, width, height, x_advance, data}|{
+                            quote!(
+                                sixtyfps::re_exports::BitmapGlyph {
+                                    x: #x,
+                                    y: #y,
+                                    width: #width,
+                                    height: #height,
+                                    x_advance: #x_advance,
+                                    data: Slice::from_slice(&[#(#data),*]),
+                                }
+                            )
+                        });
+
+                        quote!(
+                            sixtyfps::re_exports::BitmapGlyphs {
+                                pixel_size: #pixel_size,
+                                glyph_data: Slice::from_slice(&[#(#glyph_data),*]),
+                            }
+                        )
+                    });
+
+                    quote!(
+                        const #symbol: sixtyfps::re_exports::BitmapFont = sixtyfps::re_exports::BitmapFont {
+                            family_name: Slice::from_slice(#family_name.as_bytes()),
+                            character_map: Slice::from_slice(&[#(#character_map),*]),
+                            units_per_em: #units_per_em,
+                            ascent: #ascent,
+                            descent: #descent,
+                            glyphs: Slice::from_slice(&[#(#glyphs),*])
+                        };
+                    )
+                },
+             }
         })
         .collect();
 
@@ -1671,6 +1708,9 @@ fn compile_expression(expr: &Expression, component: &Rc<Component>) -> TokenStre
             BuiltinFunction::RegisterCustomFontByMemory => {
                 panic!("internal error: BuiltinFunction::RegisterCustomFontByMemory can only be compiled as part of a FunctionCall expression")
             }
+            BuiltinFunction::RegisterBitmapFont => {
+                panic!("internal error: BuiltinFunction::RegisterBitmapFont can only be compiled as part of a FunctionCall expression")
+            }
         },
         Expression::ElementReference(_) => todo!("Element references are only supported in the context of built-in function calls at the moment"),
         Expression::MemberFunction{ .. } => panic!("member function expressions must not appear in the code generator anymore"),
@@ -1807,6 +1847,18 @@ fn compile_expression(expr: &Expression, component: &Rc<Component>) -> TokenStre
                         quote!(sixtyfps::register_font_from_memory(#symbol.into());)
                     } else {
                         panic!("internal error: argument to RegisterCustomFontByMemory must be a number")
+                    }
+                }
+                Expression::BuiltinFunctionReference(BuiltinFunction::RegisterBitmapFont, _) => {
+                    if arguments.len() != 1 {
+                        panic!("internal error: incorrect argument count to RegisterBitmapFont call");
+                    }
+                    if let Expression::NumberLiteral(resource_id, _) = &arguments[0] {
+                        let resource_id: usize = *resource_id as _;
+                        let symbol = format_ident!("SFPS_EMBEDDED_RESOURCE_{}", resource_id);
+                        quote!(sixtyfps::register_bitmap_font(&#symbol);)
+                    } else {
+                        panic!("internal error: argument to RegisterBitmapFont must be a number")
                     }
                 }
                 _ => {
