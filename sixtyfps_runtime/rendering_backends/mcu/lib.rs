@@ -23,6 +23,7 @@ mod simulator;
 #[cfg(feature = "simulator")]
 use simulator::event_loop;
 
+mod fonts;
 mod renderer;
 
 #[cfg(all(not(feature = "std"), feature = "unsafe_single_core"))]
@@ -117,11 +118,15 @@ mod snapshotbackend {
         fn set_mouse_cursor(&self, _cursor: sixtyfps_corelib::items::MouseCursor) {}
         fn text_size(
             &self,
-            _font_request: sixtyfps_corelib::graphics::FontRequest,
+            font_request: sixtyfps_corelib::graphics::FontRequest,
             text: &str,
-            _max_width: Option<f32>,
+            max_width: Option<f32>,
         ) -> Size {
-            Size::new(text.len() as f32 * 10., 10.)
+            crate::fonts::text_size(
+                font_request.merge(&self.self_weak.upgrade().unwrap().default_font_properties()),
+                text,
+                max_width,
+            )
         }
 
         fn text_input_byte_offset_for_position(
@@ -183,6 +188,13 @@ mod snapshotbackend {
         }
 
         fn quit_event_loop(&'static self) {}
+
+        fn register_bitmap_font(
+            &'static self,
+            font_data: &'static sixtyfps_corelib::graphics::BitmapFont,
+        ) {
+            crate::fonts::register_bitmap_font(font_data);
+        }
 
         fn set_clipboard_text(&'static self, _text: String) {
             unimplemented!()
