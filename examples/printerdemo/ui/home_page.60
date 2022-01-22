@@ -71,8 +71,8 @@ export HomePage := Page {
     }
 
     queue-view := PrinterQueueView {
-        x: parent.width - width;
-        width: 313px;
+        x: (button-width +button-spacing)*2 + 28px;
+        width: parent.width - x;
         show-job-details(idx) => {
             current-subpage = 1; // Not nice to hard-code the index here...
         }
@@ -94,10 +94,10 @@ export HomePage := Page {
         x: current-subpage == 3 ? 0 : parent.width + parent.x + 2px;
         animate x { duration: 125ms; easing: ease; }
         back => { current-subpage = 0 }
-    }
+    }*/
     UsbPage {
         x: current-subpage == 4 ? 0 : parent.width + parent.x + 2px;
         animate x { duration: 125ms; easing: ease; }
         back => { current-subpage = 0 }
-    }*/
+    }
 }
