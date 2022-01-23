@@ -12,7 +12,7 @@ only be used with `version = "=x.y.z"` in Cargo.toml.
 
 */
 #![doc(html_logo_url = "https://sixtyfps.io/resources/logo.drawio.svg")]
-#![cfg_attr(not(feature = "simulator"), no_std)]
+#![cfg_attr(not(any(feature = "simulator", feature = "terminal")), no_std)]
 #![cfg_attr(feature = "pico-st7789", feature(alloc_error_handler))]
 
 extern crate alloc;
@@ -188,7 +188,7 @@ mod the_backend {
     pub struct MCUBackend {
         #[cfg(all(not(feature = "std"), feature = "unsafe_single_core"))]
         inner: RefCell<MCUBackendInner>,
-        #[cfg(feature = "std")]
+        #[cfg(any(feature = "std", not(feature = "unsafe_single_core")))]
         inner: std::sync::Mutex<MCUBackendInner>,
     }
 
@@ -202,7 +202,7 @@ mod the_backend {
             f(
                 #[cfg(all(not(feature = "std"), feature = "unsafe_single_core"))]
                 &mut self.inner.borrow_mut(),
-                #[cfg(feature = "std")]
+                #[cfg(any(feature = "std", not(feature = "unsafe_single_core")))]
                 &mut self.inner.lock().unwrap(),
             )
         }
@@ -351,7 +351,7 @@ pub fn init_with_display<Display: Devices + 'static>(display: Display) {
     });
 }
 
-#[cfg(not(feature = "pico-st7789"))]
+#[cfg(all(not(feature = "pico-st7789"), not(feature = "terminal")))]
 pub fn init_with_mock_display() {
     struct EmptyDisplay;
     impl embedded_graphics::draw_target::DrawTarget for EmptyDisplay {
@@ -378,3 +378,10 @@ mod pico_st7789;
 
 #[cfg(feature = "pico-st7789")]
 pub use pico_st7789::*;
+
+#[cfg(feature = "terminal")]
+mod terminal;
+#[cfg(feature = "terminal")]
+pub fn init_with_mock_display() {
+    init_with_display(terminal::init());
+}
